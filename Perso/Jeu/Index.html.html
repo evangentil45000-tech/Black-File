@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dossier Noir</title>
+  <style>
+    :root{
+      --bg:#070a10;
+      --panel:rgba(18,26,36,.92);
+      --line:rgba(180,200,255,.14);
+      --muted:rgba(232,238,246,.75);
+      --txt:#e8eef6;
+      --good:rgba(80,255,170,.85);
+      --bad:rgba(255,90,90,.85);
+      --accent:rgba(90,140,255,.75);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--txt); background:var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Arial;
+      overflow-x:hidden;
+    }
+
+    /* ==== Fond enquête dynamique ==== */
+    .bg{
+  position:fixed;
+  inset:0;
+  z-index:-3;
+
+  /* image de fond */
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.6), rgba(0,0,0,.7)),
+    url("fbi-table.jpg");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+;
+      animation: hue 12s ease-in-out infinite alternate;
+    }
+    @keyframes hue{ from{filter:hue-rotate(0deg)} to{filter:hue-rotate(18deg)} }
+
+    .scan{
+      position:fixed; inset:-40px; z-index:-2; pointer-events:none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.03),
+        rgba(255,255,255,.03) 1px,
+        transparent 1px,
+        transparent 6px
+      );
+      mix-blend-mode: overlay;
+      opacity:.35;
+      animation: drift 6s linear infinite;
+    }
+    @keyframes drift{ to{ transform: translateY(40px); } }
+
+    .wrap{
+      max-width:620px;
+      margin:0 auto;
+      padding:16px;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+    }
+    .card{
+      width:100%;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:16px;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
+    }
+
+    .top{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      margin-bottom:10px;
+    }
+    h1{font-size:22px;margin:0}
+    h2{font-size:16px;margin:14px 0 8px}
+    .muted{color:var(--muted); font-size:13px; line-height:1.35}
+    .pill{
+      display:inline-block;
+      font-size:12px;
+      padding:6px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      opacity:.95;
+      white-space:nowrap;
+    }
+    label{display:block;margin:10px 0 6px;color:var(--muted)}
+    input, select, textarea{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(10,16,26,.85);
+      color:var(--txt);
+      font-size:15px;
+      outline:none;
+    }
+    textarea{min-height:92px; resize:vertical}
+
+    .row{display:flex; gap:10px}
+    .row > div{flex:1}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    @media (max-width:430px){ .grid2{grid-template-columns:1fr} }
+
+    .btn{
+      width:100%;
+      position:relative;
+      padding:14px 12px;
+      margin:10px 0;
+      border:0;
+      border-radius:14px;
+      background:rgba(30,42,58,.9);
+      color:var(--txt);
+      font-size:15px;
+      text-align:center;
+      overflow:hidden;
+      transition: transform .08s ease, filter .08s ease;
+    }
+    .btn.secondary{background:rgba(18,32,48,.9); border:1px solid var(--line)}
+    .btn.danger{background:rgba(60,22,22,.92); border:1px solid rgba(255,90,90,.22)}
+    .btn:active{transform:scale(.99); filter:brightness(1.08)}
+    .ripple{
+      position:absolute; border-radius:999px;
+      transform: translate(-50%,-50%) scale(0);
+      background: rgba(232,238,246,.22);
+      width:12px; height:12px;
+      pointer-events:none;
+      animation: rip .55s ease-out forwards;
+    }
+    @keyframes rip{ to{ transform: translate(-50%,-50%) scale(18); opacity:0; } }
+
+    .bigword{
+      font-size:30px; font-weight:900; letter-spacing:.4px;
+      padding:14px; border-radius:14px;
+      background:rgba(10,16,26,.85);
+      border:1px solid var(--line);
+      text-align:center; margin:12px 0;
+    }
+
+    .bar{
+      height:10px; border-radius:999px; overflow:hidden;
+      border:1px solid var(--line);
+      background:rgba(10,16,26,.75);
+      margin-top:6px;
+    }
+    .fill{height:100%; width:0%}
+
+    .list{
+      display:grid; gap:8px; margin-top:10px;
+    }
+    .item{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:rgba(10,16,26,.55);
+      align-items:center;
+    }
+    .right{opacity:.9; font-size:13px; color:var(--muted)}
+    .tag{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--line); opacity:.9}
+
+    .switchWrap{display:flex; align-items:center; gap:8px; user-select:none; color:var(--muted); font-size:12px}
+    .switch{
+      width:44px;height:24px;border-radius:999px;border:1px solid var(--line);
+      background:rgba(10,16,26,.85); position:relative;
+    }
+    .knob{
+      position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;
+      background:rgba(232,238,246,.75); opacity:.85;
+      transition:left .18s ease, background .18s ease, opacity .18s ease;
+    }
+    .switch.on .knob{left:22px;background:var(--good);opacity:.95}
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="scan"></div>
+
+  <div class="wrap">
+    <div class="card" id="screen"></div>
+  </div>
+
+<script>
+/* =========================
+   AUDIO (suspense + click)
+========================= */
+let audio = { ctx:null, master:null, running:false, musicOn:true };
+
+function ensureAudio(){
+  if(audio.ctx) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  audio.ctx = new Ctx();
+  audio.master = audio.ctx.createGain();
+  audio.master.gain.value = 0.12;
+  audio.master.connect(audio.ctx.destination);
+}
+
+function startSuspense(){
+  ensureAudio();
+  if(audio.running) return;
+  audio.running = true;
+
+  const ctx = audio.ctx;
+
+  const osc1 = ctx.createOscillator(); osc1.type="sine";     osc1.frequency.value=55;
+  const osc2 = ctx.createOscillator(); osc2.type="triangle"; osc2.frequency.value=110;
+
+  const lfo = ctx.createOscillator(); lfo.type="sine"; lfo.frequency.value=0.18;
+  const gain1 = ctx.createGain(); gain1.gain.value=0.55;
+  const gain2 = ctx.createGain(); gain2.gain.value=0.22;
+  const trem  = ctx.createGain(); trem.gain.value=0.55;
+
+  const lfoGain = ctx.createGain(); lfoGain.gain.value=0.18;
+  lfo.connect(lfoGain); lfoGain.connect(trem.gain);
+
+  osc1.connect(gain1); gain1.connect(trem);
+  osc2.connect(gain2); gain2.connect(trem);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type="lowpass"; filter.frequency.value=520;
+  trem.connect(filter);
+
+  const musicGain = ctx.createGain();
+  musicGain.gain.value = audio.musicOn ? 1 : 0;
+  filter.connect(musicGain);
+  musicGain.connect(audio.master);
+
+  osc1.start(); osc2.start(); lfo.start();
+  audio._nodes = { musicGain };
+}
+
+function setMusic(on){
+  audio.musicOn = on;
+  if(audio._nodes?.musicGain) audio._nodes.musicGain.gain.value = on ? 1 : 0;
+}
+
+function clickSound(){
+  ensureAudio();
+  const ctx = audio.ctx;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type="square";
+  o.frequency.setValueAtTime(420, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(160, ctx.currentTime + 0.06);
+  g.gain.setValueAtTime(0.0001, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
+  o.connect(g); g.connect(audio.master);
+  o.start(); o.stop(ctx.currentTime + 0.09);
+}
+
+/* =========================
+   DATA (packs de mots)
+   - On stocke des "thèmes" avec 2 listes: moyen / hard
+========================= */
+const DEFAULT_PACKS = {
+  "Animaux": {
+    moyen: ["Chat","Chien","Lapin","Cheval","Dauphin","Aigle","Serpent","Panda"],
+    hard:  ["Chat","Mouche","Méduse","Caméléon","Corbeau","Morse","Hippocampe","Tortue"]
+  },
+  "Objets": {
+    moyen: ["Téléphone","Clé","Lunettes","Couteau","Brosse à dents","Montre","Lampe","Sac"],
+    hard:  ["Téléphone","Parapluie","Marteau","Aspirateur","Cadenas","Boussole","Trombone","Perceuse"]
+  },
+  "Lieux": {
+    moyen: ["Plage","Montagne","Forêt","Ville","Désert","Aéroport","Musée","Stade"],
+    hard:  ["Plage","Station spatiale","Égout","Bunker","Volcan","Prison","Laboratoire","Grottes"]
+  },
+  "Nourriture": {
+    moyen: ["Pizza","Pâtes","Burger","Sushi","Salade","Crêpe","Tacos","Soupe"],
+    hard:  ["Pizza","Wasabi","Huître","Fromage bleu","Algues","Piment","Gingembre","Caviar"]
+  },
+  "Métiers": {
+    moyen: ["Médecin","Professeur","Policier","Cuisinier","Pilote","Journaliste","Dentiste","Pompier"],
+    hard:  ["Médecin","Démineur","Astronaute","Horloger","Spéléologue","Traducteur","Apiculteur","Forgeron"]
+  }
+};
+
+function loadPacks(){
+  try{
+    const raw = localStorage.getItem("DN_PACKS");
+    if(!raw) return structuredClone(DEFAULT_PACKS);
+    const obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? obj : structuredClone(DEFAULT_PACKS);
+  }catch{
+    return structuredClone(DEFAULT_PACKS);
+  }
+}
+function savePacks(packs){
+  localStorage.setItem("DN_PACKS", JSON.stringify(packs));
+}
+
+let PACKS = loadPacks();
+
+/* =========================
+   STATE
+========================= */
+let state = {
+  players: 5,
+  mode: "moyen",
+  names: [],
+  rounds: 3,
+  currentRound: 1,
+
+  theme: null,
+  commonWord: null,
+  intruderWord: null,
+  intruderIndex: null, // 0..players-1
+
+  revealIndex: 0,
+  revealed: false,
+
+  // vote
+  voteIndex: 0,
+  votes: [],
+
+  // stats
+  scoreGroup: 0,
+  scoreIntruder: 0,
+
+  // ui
+  musicOn: true
+};
+
+function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function choice(arr){ return arr[randInt(0, arr.length-1)]; }
+function safeName(s, fallback){ return (s||"").trim() || fallback; }
+
+/* =========================
+   UI HELPERS
+========================= */
+function screen(html){
+  document.getElementById("screen").innerHTML = html;
+  wireButtonsFX();
+}
+function wireButtonsFX(){
+  document.querySelectorAll("button.btn").forEach(btn=>{
+    btn.addEventListener("click", (e)=>{
+      // ripple
+      const r = document.createElement("span");
+      r.className = "ripple";
+      const rect = btn.getBoundingClientRect();
+      r.style.left = (e.clientX - rect.left) + "px";
+      r.style.top  = (e.clientY - rect.top) + "px";
+      btn.appendChild(r);
+      setTimeout(()=>r.remove(), 650);
+
+      // vib
+      if(navigator.vibrate) navigator.vibrate(12);
+
+      // sound (et démarre la musique au 1er clic)
+      if(audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+      clickSound();
+      startSuspense();
+    }, {once:false});
+  });
+}
+
+/* =========================
+   GAME LOGIC
+========================= */
+function buildRound(){
+  const themes = Object.keys(PACKS);
+  state.theme = choice(themes);
+
+  const words = (PACKS[state.theme] && PACKS[state.theme][state.mode]) ? PACKS[state.theme][state.mode] : [];
+  if(words.length < 2){
+    // fallback
+    state.theme = "Animaux";
+    state.commonWord = "Chat";
+    state.intruderWord = "Chien";
+  }else{
+    state.commonWord = choice(words);
+    do { state.intruderWord = choice(words); } while (state.intruderWord === state.commonWord);
+  }
+
+  state.intruderIndex = randInt(0, state.players - 1);
+
+  state.revealIndex = 0;
+  state.revealed = false;
+
+  state.voteIndex = 0;
+  state.votes = Array(state.players).fill(null);
+}
+
+function startMatch(){
+  state.currentRound = 1;
+  state.scoreGroup = 0;
+  state.scoreIntruder = 0;
+  buildRound();
+  renderReveal();
+}
+
+function nextRoundOrEnd(){
+  if(state.currentRound >= state.rounds){
+    renderEnd();
+  }else{
+    state.currentRound++;
+    buildRound();
+    renderReveal();
+  }
+}
+
+/* =========================
+   SCREENS
+========================= */
+function renderHome(){
+  screen(`
+    <div class="top">
+      <div>
+        <h1>🕵️ Dossier Noir</h1>
+        <div class="muted">Jeu 1 téléphone · 3–10 joueurs · ambiance enquête.</div>
+      </div>
+      <div class="switchWrap">
+        <span>Musique</span>
+        <div class="switch ${audio.musicOn ? "on":""}" id="musicSwitch" role="switch">
+          <div class="knob"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="muted">
+      Tout le monde reçoit <b>le même mot</b>. Un joueur reçoit <b>un mot différent</b> (même thème).
+      <br><b>Important :</b> l’intrus ne sait pas qu’il est intrus (il voit juste son mot).
+    </div>
+
+    <h2>Paramètres</h2>
+    <div class="row">
+      <div>
+        <label>Joueurs (3–10)</label>
+        <input id="players" type="number" min="3" max="10" value="${state.players}" />
+      </div>
+      <div>
+        <label>Difficulté</label>
+        <select id="mode">
+          <option value="moyen" ${state.mode==="moyen"?"selected":""}>Moyen</option>
+          <option value="hard" ${state.mode==="hard"?"selected":""}>Hard</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Manches</label>
+        <select id="rounds">
+          ${[1,2,3,4,5].map(n=>`<option value="${n}" ${state.rounds===n?"selected":""}>${n}</option>`).join("")}
+        </select>
+      </div>
+      <div>
+        <label>Packs</label>
+        <button class="btn secondary" id="packs">🧩 Gérer les packs</button>
+      </div>
+    </div>
+
+    <h2>Prénoms</h2>
+    <div class="muted">Laisse vide → “Joueur 1”, etc.</div>
+    <div id="names" class="grid2" style="margin-top:10px;"></div>
+
+    <button class="btn" id="start">▶️ Lancer la mission</button>
+  `);
+
+  document.getElementById("musicSwitch").onclick = () => {
+    audio.musicOn = !audio.musicOn;
+    setMusic(audio.musicOn);
+    renderHome();
+  };
+
+  function buildNameInputs(n){
+    const box = document.getElementById("names");
+    box.innerHTML = "";
+    for(let i=0;i<n;i++){
+      const val = state.names[i] ?? "";
+      const lab = document.createElement("label");
+      lab.style.margin = "0";
+      lab.innerHTML = `<input data-i="${i}" placeholder="Joueur ${i+1}" value="${String(val).replaceAll('"','&quot;')}" />`;
+      box.appendChild(lab);
+    }
+    box.querySelectorAll("input").forEach(inp=>{
+      inp.addEventListener("input", ()=>{
+        const i = parseInt(inp.dataset.i,10);
+        state.names[i] = inp.value;
+      });
+    });
+  }
+  buildNameInputs(state.players);
+
+  document.getElementById("players").addEventListener("change", (e)=>{
+    const p = Math.max(3, Math.min(10, parseInt(e.target.value,10) || 5));
+    state.players = p;
+    state.names.length = p;
+    buildNameInputs(p);
+  });
+
+  document.getElementById("mode").addEventListener("change", (e)=>{
+    state.mode = (e.target.value === "hard") ? "hard" : "moyen";
+  });
+
+  document.getElementById("rounds").addEventListener("change", (e)=>{
+    state.rounds = parseInt(e.target.value,10) || 3;
+  });
+
+  document.getElementById("packs").onclick = renderPacks;
+
+  document.getElementById("start").onclick = () => {
+    state.players = Math.max(3, Math.min(10, parseInt(document.getElementById("players").value,10) || 5));
+    state.mode = (document.getElementById("mode").value === "hard") ? "hard" : "moyen";
+    state.rounds = parseInt(document.getElementById("rounds").value,10) || 3;
+    state.names = Array.from({length: state.players}, (_,i)=> safeName(state.names[i], `Joueur ${i+1}`));
+    startMatch();
+  };
+}
+
+function renderReveal(){
+  const name = state.names[state.revealIndex] || `Joueur ${state.revealIndex+1}`;
+
+  if(!state.revealed){
+    screen(`
+      <div class="top">
+        <div class="pill">Manche ${state.currentRound} / ${state.rounds}</div>
+        <div class="pill">${state.mode.toUpperCase()}</div>
+      </div>
+
+      <h2>📱 Passe le téléphone</h2>
+      <div class="muted"><b>C’est à ${name} de jouer.</b><br>Appuie pour voir ton mot (personne ne regarde).</div>
+
+      <button class="btn" id="reveal">👀 Voir mon mot</button>
+      <button class="btn secondary" id="home">⬅️ Menu</button>
+    `);
+
+    document.getElementById("reveal").onclick = () => { state.revealed = true; renderReveal(); };
+    document.getElementById("home").onclick = renderHome;
+    return;
+  }
+
+  // Intrus ne sait pas → PAS d’info spéciale.
+  const word = (state.revealIndex === state.intruderIndex) ? state.intruderWord : state.commonWord;
+
+  screen(`
+    <div class="top">
+      <div class="pill">${name}</div>
+      <div class="pill">Thème: ${state.theme}</div>
+    </div>
+
+    <h2>🔎 Ton mot</h2>
+    <div class="bigword">${word}</div>
+    <div class="muted">Donne des indices sans dire le mot exact.</div>
+
+    <button class="btn" id="hide">🙈 Cacher et passer</button>
+  `);
+
+  document.getElementById("hide").onclick = () => {
+    state.revealed = false;
+    state.revealIndex++;
+    if(state.revealIndex >= state.players) renderDiscussion();
+    else renderReveal();
+  };
+}
+
+function renderDiscussion(){
+  screen(`
+    <div class="top">
+      <div class="pill">Discussion</div>
+      <div class="pill">Manche ${state.currentRound}</div>
+    </div>
+
+    <h2>🗣️ Phase discussion</h2>
+    <div class="muted">
+      Faites <b>1 ou 2 tours</b> de table.<br>
+      À ton tour : donne <b>un indice</b> (mot/phrase courte).<br>
+      <b>Interdit</b> de dire le mot exact.
+    </div>
+
+    <h2>⏱️ Timer (option)</h2>
+    <div class="muted">Si vous voulez du stress : 60 secondes et vote.</div>
+
+    <button class="btn" id="vote">🗳️ Passer au vote (sur le téléphone)</button>
+  `);
+
+  document.getElementById("vote").onclick = () => {
+    state.voteIndex = 0;
+    renderVote();
+  };
+}
+
+function renderVote(){
+  const voterName = state.names[state.voteIndex] || `Joueur ${state.voteIndex+1}`;
+
+  screen(`
+    <div class="top">
+      <div class="pill">Vote secret</div>
+      <div class="pill">Joueur ${state.voteIndex+1}/${state.players}</div>
+    </div>
+
+    <h2>🗳️ ${voterName}, vote</h2>
+    <div class="muted">Choisis qui tu suspectes. (Garde ça secret.)</div>
+
+    <div class="list" id="voteList"></div>
+
+    <button class="btn secondary" id="back">⬅️ Retour discussion</button>
+  `);
+
+  const list = document.getElementById("voteList");
+  list.innerHTML = "";
+
+  state.names.forEach((n, idx)=>{
+    const div = document.createElement("button");
+    div.className = "btn secondary";
+    div.style.textAlign = "left";
+    div.innerHTML = `🧩 ${n}`;
+    div.onclick = () => {
+      state.votes[state.voteIndex] = idx;
+      state.voteIndex++;
+      if(state.voteIndex >= state.players) renderResults();
+      else renderVote();
+    };
+    list.appendChild(div);
+  });
+
+  document.getElementById("back").onclick = renderDiscussion;
+}
+
+function tallyVotes(){
+  const counts = Array(state.players).fill(0);
+  for(const v of state.votes){
+    if(typeof v === "number" && v >= 0 && v < state.players) counts[v]++;
+  }
+  let max = -1;
+  let winners = [];
+  counts.forEach((c,i)=>{
+    if(c > max){ max = c; winners = [i]; }
+    else if(c === max){ winners.push(i); }
+  });
+  return { counts, max, winners };
+}
+
+function renderResults(){
+  const { counts, winners } = tallyVotes();
+
+  const intruderName = state.names[state.intruderIndex];
+  const suspected = winners.length === 1 ? winners[0] : null;
+
+  const groupWins = (suspected !== null && suspected === state.intruderIndex);
+
+  if(groupWins) state.scoreGroup++;
+  else state.scoreIntruder++;
+
+  screen(`
+    <div class="top">
+      <div class="pill">Résultat</div>
+      <div class="pill">Manche ${state.currentRound}/${state.rounds}</div>
+    </div>
+
+    <h2>${groupWins ? "✅ Intrus trouvé" : "😈 Intrus s’en sort"}</h2>
+
+    <div class="item">
+      <div><b>Intrus</b></div>
+      <div class="right">${intruderName}</div>
+    </div>
+
+    <div class="item">
+      <div><b>Mot commun</b></div>
+      <div class="right">${state.commonWord}</div>
+    </div>
+
+    <div class="item">
+      <div><b>Mot différent</b></div>
+      <div class="right">${state.intruderWord}</div>
+    </div>
+
+    <h2>📊 Votes</h2>
+    <div class="list">
+      ${state.names.map((n,i)=>`
+        <div class="item">
+          <div>${n}</div>
+          <div class="right"><span class="tag">${counts[i]} vote(s)</span></div>
+        </div>
+      `).join("")}
+    </div>
+
+    <h2>🏁 Score</h2>
+    <div class="muted">Groupe: <b>${state.scoreGroup}</b> · Intrus: <b>${state.scoreIntruder}</b></div>
+
+    <button class="btn" id="next">${state.currentRound >= state.rounds ? "🏁 Fin" : "➡️ Manche suivante"}</button>
+    <button class="btn secondary" id="home">🏠 Menu</button>
+  `);
+
+  document.getElementById("next").onclick = nextRoundOrEnd;
+  document.getElementById("home").onclick = renderHome;
+}
+
+function renderEnd(){
+  screen(`
+    <div class="top">
+      <div class="pill">Fin de partie</div>
+      <div class="pill">${state.rounds} manche(s)</div>
+    </div>
+
+    <h2>🎬 Débrief</h2>
+    <div class="muted">
+      Score final : Groupe <b>${state.scoreGroup}</b> · Intrus <b>${state.scoreIntruder}</b><br>
+      ${state.scoreGroup > state.scoreIntruder ? "Le groupe a été solide." :
+        state.scoreGroup < state.scoreIntruder ? "L’intrus vous a retournés." :
+        "Égalité, c’était serré."}
+    </div>
+
+    <button class="btn" id="replay">🔁 Rejouer</button>
+    <button class="btn secondary" id="home">🏠 Menu</button>
+  `);
+
+  document.getElementById("replay").onclick = startMatch;
+  document.getElementById("home").onclick = renderHome;
+}
+
+/* =========================
+   PACKS (éditeur simple)
+========================= */
+function renderPacks(){
+  const themes = Object.keys(PACKS);
+
+  screen(`
+    <div class="top">
+      <div>
+        <h2 style="margin:0">🧩 Packs</h2>
+        <div class="muted">Ajoute/édite des thèmes et leurs mots. (Sauvé dans ton navigateur)</div>
+      </div>
+      <div class="pill">${themes.length} thème(s)</div>
+    </div>
+
+    <label>Choisir un thème</label>
+    <select id="themeSel">${themes.map(t=>`<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("")}</select>
+
+    <div class="row">
+      <div>
+        <label>Mots (Moyen) — 1 par ligne</label>
+        <textarea id="moyen"></textarea>
+      </div>
+      <div>
+        <label>Mots (Hard) — 1 par ligne</label>
+        <textarea id="hard"></textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Nouveau thème</label>
+        <input id="newTheme" placeholder="Ex: Sports, École..." />
+      </div>
+      <div style="align-self:end">
+        <button class="btn secondary" id="addTheme">➕ Ajouter</button>
+      </div>
+    </div>
+
+    <button class="btn" id="save">💾 Sauvegarder</button>
+    <button class="btn danger" id="reset">♻️ Reset packs</button>
+    <button class="btn secondary" id="back">⬅️ Retour</button>
+  `);
+
+  const sel = document.getElementById("themeSel");
+  const taM = document.getElementById("moyen");
+  const taH = document.getElementById("hard");
+
+  function loadTheme(t){
+    const obj = PACKS[t] || {moyen:[], hard:[]};
+    taM.value = (obj.moyen || []).join("\n");
+    taH.value = (obj.hard || []).join("\n");
+  }
+  loadTheme(sel.value);
+
+  sel.onchange = () => loadTheme(sel.value);
+
+  document.getElementById("addTheme").onclick = () => {
+    const name = (document.getElementById("newTheme").value || "").trim();
+    if(!name) return;
+    if(!PACKS[name]) PACKS[name] = {moyen:[""], hard:[""]};
+    savePacks(PACKS);
+    renderPacks();
+    // sélectionner le nouveau
+    setTimeout(()=>{
+      const s = document.getElementById("themeSel");
+      s.value = name;
+      s.dispatchEvent(new Event("change"));
+    }, 0);
+  };
+
+  document.getElementById("save").onclick = () => {
+    const t = sel.value;
+    PACKS[t] = {
+      moyen: taM.value.split("\n").map(x=>x.trim()).filter(Boolean),
+      hard:  taH.value.split("\n").map(x=>x.trim()).filter(Boolean)
+    };
+    savePacks(PACKS);
+    // mini feedback
+    renderPacks();
+  };
+
+  document.getElementById("reset").onclick = () => {
+    PACKS = structuredClone(DEFAULT_PACKS);
+    savePacks(PACKS);
+    renderPacks();
+  };
+
+  document.getElementById("back").onclick = renderHome;
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+/* Start */
+renderHome();
+</script>
+</body>
+</html>
