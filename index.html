@@ -269,7 +269,67 @@ footer{
   color: rgba(255,255,255,.70);
   font-size: 11px;
   display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+} 
+/* ===== Vote public (cartes) + countdown ===== */
+.voteGrid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap:10px;
+  margin-top:10px;
 }
+@media (max-width:560px){ .voteGrid{ grid-template-columns: 1fr; } }
+
+.voteCard{
+  padding:14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.06);
+  background: rgba(22,16,11,0.55);
+  color: rgba(235,220,200,0.92);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.45);
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.voteCard:hover{
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(255,220,170,0.10),
+    0 0 18px rgba(255,190,120,0.18),
+    0 14px 40px rgba(0,0,0,0.6);
+}
+
+.voteCount{
+  font-weight:900;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.25);
+  color: rgba(235,220,200,0.95);
+  min-width: 86px;
+  text-align:center;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  z-index:9999;
+}
+.countdown{
+  font-size: 88px;
+  font-weight: 1000;
+  letter-spacing: 2px;
+  color: rgba(235,220,200,0.98);
+  text-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+
   </style>
 </head>
 
@@ -361,7 +421,13 @@ function setMusic(on){
 /* =========================
    STATE
 ========================= */
-let state = {
+let state = {   alive: [],
+
+  voteCounts: [],
+  votesCast: 0,
+  tieCandidates: null,
+  chiefIndex: null,
+
   players: 5,
   names: ["Joueur 1","Joueur 2","Joueur 3","Joueur 4","Joueur 5","Joueur 6","Joueur 7","Joueur 8","Joueur 9","Joueur 10"],
   intruderIndex: 0,
@@ -553,12 +619,22 @@ function startGame(){
   state.commonWord = w1;
   state.intruderWord = w2;
 
-  state.intruderIndex = randInt(0, n-1);
+ state.intruderIndex = randInt(0, n-1);
 
-  state.revealIndex = 0;
-  state.revealed = false;
+// ✅ ÉTAPE 3 : tous les joueurs sont vivants au début
+state.alive = Array(n).fill(true);
 
-  renderReveal();
+// (optionnel mais conseillé) reset du vote à chaque nouvelle mission
+state.voteCounts = Array(n).fill(0);
+state.votesCast = 0;
+state.tieCandidates = null;
+state.chiefIndex = null;
+
+state.revealIndex = 0;
+state.revealed = false;
+
+renderReveal();
+
 }
 
 /* =========================
@@ -613,11 +689,13 @@ function renderReveal(){
       renderReveal();
       return;
     }
+
     state.revealIndex++;
     if(state.revealIndex >= state.players){
       renderRound();
       return;
     }
+
     state.revealed = false;
     renderReveal();
   };
@@ -625,23 +703,193 @@ function renderReveal(){
   document.getElementById("home").onclick = renderHome;
 }
 
-/* =========================
-   ROUND (indices)
-========================= */
-function renderRound(){
-  setHeader("Indices");
+/* ===== Helpers: joueurs vivants + vote + fin ===== */
+function aliveIndices(){
+  const a=[];
+  for(let i=0;i<state.players;i++) if(state.alive[i]) a.push(i);
+  return a;
+}
+function aliveCount(){
+  return aliveIndices().length;
+}
+function eliminatePlayer(i){
+  state.alive[i] = false;
+}
+
+function checkEndAndMaybeFinish(){
+  if(!state.alive[state.intruderIndex]){
+    renderFinal(true, "✅ L’imposteur a été éliminé !");
+    return true;
+  }
+  if(aliveCount() === 2 && state.alive[state.intruderIndex]){
+    renderFinal(false, "❌ Il ne reste que 2 joueurs : l’imposteur survit !");
+    return true;
+  }
+  return false;
+}
+
+function startCountdownAndResolve(){
+  let t = 3;
+  const ov = document.createElement("div");
+  ov.className = "overlay";
+  ov.innerHTML = `<div class="countdown">${t}</div>`;
+  document.body.appendChild(ov);
+
+  const tick = () => {
+    t--;
+    if(t <= 0){
+      document.body.removeChild(ov);
+      resolveVotePublic();
+      return;
+    }
+    ov.querySelector(".countdown").textContent = t;
+    setTimeout(tick, 700);
+  };
+  setTimeout(tick, 700);
+}
+
+function resolveVotePublic(){
+  const counts = state.voteCounts.slice();
+
+  let max = -1;
+  for(const i of aliveIndices()) max = Math.max(max, counts[i] || 0);
+
+  const top = [];
+  for(const i of aliveIndices()){
+    if((counts[i]||0) === max) top.push(i);
+  }
+
+  if(top.length === 1){
+    applyElimination(top[0], counts);
+    return;
+  }
+
+  state.tieCandidates = top;
+  const alive = aliveIndices();
+  state.chiefIndex = alive[randInt(0, alive.length-1)];
+  renderTieBreaker(counts);
+}
+
+function applyElimination(accusedIndex, counts){
+  eliminatePlayer(accusedIndex);
+
+  // reset votes pour le prochain tour
+  state.voteCounts = Array(state.players).fill(0);
+  state.votesCast = 0;
+  state.tieCandidates = null;
+  state.chiefIndex = null;
+
+  if(checkEndAndMaybeFinish()) return;
+
+  const nm = safeName(state.names[accusedIndex], `Joueur ${accusedIndex+1}`);
+  renderRound(`Joueur éliminé : ${nm}`);
+}
+
+function renderTieBreaker(counts){
+  setHeader("Égalité");
+
+  const chiefName = safeName(state.names[state.chiefIndex], `Joueur ${state.chiefIndex+1}`);
+
+  const options = state.tieCandidates.map(i=>{
+    const nm = safeName(state.names[i], `Joueur ${i+1}`);
+    return `
+      <div class="voteCard" data-i="${i}">
+        <div><strong>${escapeHtml(nm)}</strong></div>
+        <div class="voteCount">${counts[i]||0} votes</div>
+      </div>
+    `;
+  }).join("");
 
   screen(`
     <div class="card">
-      <div class="bigWord">Indices</div>
-      <div class="muted">
-        Chacun donne un indice lié à son mot, sans le dire.
-        Puis débattez et votez !
-      </div>
+      <div class="bigWord">Égalité</div>
+      <div class="muted">Chef tiré au sort :</div>
+      <div class="bigWord">${escapeHtml(chiefName)}</div>
+      <div class="hint">Le chef tranche entre les suspects à égalité.</div>
+
+      <div class="voteGrid">${options}</div>
+
+      <button class="btn secondary" id="revoteAll">↩️ Refaire voter tout le monde</button>
+    </div>
+  `);
+
+  screenEl.querySelectorAll(".voteCard").forEach(card=>{
+    card.onclick = () => {
+      const accusedIndex = parseInt(card.dataset.i,10);
+      applyElimination(accusedIndex, counts);
+    };
+  });
+
+  document.getElementById("revoteAll").onclick = () => {
+    state.voteCounts = Array(state.players).fill(0);
+    state.votesCast = 0;
+    state.tieCandidates = null;
+    state.chiefIndex = null;
+    renderVote();
+  };
+}
+
+function renderFinal(teamWins, reason){
+  setHeader("Fin");
+
+  const intruderName = safeName(state.names[state.intruderIndex], `Joueur ${state.intruderIndex+1}`);
+
+  screen(`
+    <div class="card">
+      <div class="bigWord">${teamWins ? "✅ Victoire de l’équipe !" : "😈 Victoire de l’imposteur !"}</div>
+      <div class="muted">${escapeHtml(reason)}</div>
 
       <div class="divider"></div>
 
-      <button class="btn" id="vote">🗳️ Passer au vote</button>
+      <div class="muted">L’imposteur était :</div>
+      <div class="bigWord">${escapeHtml(intruderName)}</div>
+
+      <div class="divider"></div>
+
+      <button class="btn" id="again">🔁 Nouvelle mission</button>
+      <button class="btn secondary" id="home">🏠 Accueil</button>
+    </div>
+  `);
+
+  document.getElementById("again").onclick = startGame;
+  document.getElementById("home").onclick = renderHome;
+}
+
+/* =========================
+   ROUND (indices)
+========================= */
+function renderRound(message){
+  setHeader("Débat");
+
+  const alive = aliveIndices().map(i => safeName(state.names[i], `Joueur ${i+1}`));
+  const dead = [];
+  for(let i=0;i<state.players;i++){
+    if(!state.alive[i]) dead.push(safeName(state.names[i], `Joueur ${i+1}`));
+  }
+
+  screen(`
+    <div class="card">
+      <div class="bigWord">Débat</div>
+      <div class="muted">
+        Donnez chacun un indice lié à votre mot (sans le dire), puis votez.
+      </div>
+
+      ${message ? `<div class="divider"></div><div class="hint">${escapeHtml(message)}</div>` : ""}
+
+      <div class="divider"></div>
+
+      <div class="muted">Joueurs en jeu (${alive.length}) :</div>
+      <div class="muted">${escapeHtml(alive.join(" • "))}</div>
+
+      ${dead.length ? `
+        <div class="divider"></div>
+        <div class="muted">Éliminés :</div>
+        <div class="muted">${escapeHtml(dead.join(" • "))}</div>
+      ` : ""}
+
+      <div class="divider"></div>
+
+      <button class="btn" id="vote">🗳️ Voter</button>
       <button class="btn secondary" id="home">🏠 Retour accueil</button>
     </div>
   `);
@@ -650,41 +898,77 @@ function renderRound(){
   document.getElementById("home").onclick = renderHome;
 }
 
+
 /* =========================
    VOTE (version actuelle)
 ========================= */
 function renderVote(){
   setHeader("Vote");
 
-  const options = [];
-  for(let i=0;i<state.players;i++){
-    const nm = safeName(state.names[i], `Joueur ${i+1}`);
-    options.push(`<option value="${i}">${escapeHtml(nm)}</option>`);
+  const alive = aliveIndices();
+  const totalNeeded = alive.length;
+
+  // init/reset vote
+  if(!Array.isArray(state.voteCounts) || state.voteCounts.length !== state.players){
+    state.voteCounts = Array(state.players).fill(0);
   }
+  if(typeof state.votesCast !== "number") state.votesCast = 0;
+  state.tieCandidates = null;
+  state.chiefIndex = null;
+
+  const grid = alive.map(i=>{
+    const name = safeName(state.names[i], `Joueur ${i+1}`);
+    const c = state.voteCounts[i] || 0;
+    return `
+      <div class="voteCard" data-i="${i}">
+        <div><strong>${escapeHtml(name)}</strong></div>
+        <div class="voteCount">${c} vote${c>1?"s":""}</div>
+      </div>
+    `;
+  }).join("");
+
+  const canReveal = state.votesCast >= totalNeeded;
 
   screen(`
     <div class="card">
-      <div class="bigWord">Vote</div>
-      <div class="muted">Choisissez ensemble qui vous accusez.</div>
-      <div class="divider"></div>
+      <div class="bigWord">Vote (public)</div>
+      <div class="muted">
+        Chacun clique une fois sur le suspect.
+        <br>Votes : <strong style="color:rgba(0,0,0,0.85)">${state.votesCast}/${totalNeeded}</strong>
+      </div>
 
-      <label>Suspect</label>
-      <select id="suspect">${options.join("")}</select>
+      <div class="voteGrid">${grid}</div>
 
-      <button class="btn" id="confirm">✅ Confirmer</button>
-      <button class="btn secondary" id="back">⬅️ Retour</button>
+      <button class="btn ${canReveal ? "" : "secondary"}" id="revealVote" ${canReveal ? "" : "disabled"}>
+        🔎 Résultat (3-2-1)
+      </button>
+
+      <button class="btn secondary" id="resetVote">↩️ Réinitialiser</button>
+      <button class="btn secondary" id="backRound">⬅️ Retour</button>
     </div>
   `);
 
-  document.getElementById("back").onclick = renderRound;
+  screenEl.querySelectorAll(".voteCard").forEach(card=>{
+    card.onclick = () => {
+      if(state.votesCast >= totalNeeded) return;
+      const i = parseInt(card.dataset.i,10);
+      state.voteCounts[i] = (state.voteCounts[i]||0) + 1;
+      state.votesCast++;
+      renderVote();
+    };
+  });
 
-  document.getElementById("confirm").onclick = () => {
-    const accusedIndex = parseInt(document.getElementById("suspect").value,10);
-    const foundIntruder = (accusedIndex === state.intruderIndex);
-    if(foundIntruder) state.scoreGroup++; else state.scoreIntruder++;
-    renderResult(foundIntruder, accusedIndex);
+  document.getElementById("resetVote").onclick = () => {
+    state.voteCounts = Array(state.players).fill(0);
+    state.votesCast = 0;
+    renderVote();
   };
+
+  document.getElementById("backRound").onclick = () => renderRound();
+
+  document.getElementById("revealVote").onclick = () => startCountdownAndResolve();
 }
+
 
 /* =========================
    RESULT
