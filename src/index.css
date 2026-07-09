@@ -1,0 +1,172 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/instrument-serif";
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* Fond "nuit asphalte" */
+  --color-night-950: #05070d;
+  --color-night-900: #090d16;
+  --color-night-850: #0c1120;
+  --color-night-800: #101728;
+  --color-night-700: #182136;
+
+  /* Accent signature TrustDrive */
+  --color-mint-300: #6ee7b7;
+  --color-mint-400: #34d399;
+  --color-mint-500: #10b981;
+
+  --animate-marquee: marquee 42s linear infinite;
+  --animate-scanline: scanline 3.2s ease-in-out infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes scanline {
+    0%, 100% { top: 4%; opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    50% { top: 92%; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.8); }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-night-950);
+  color: #e7ecf4;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(52, 211, 153, 0.28);
+  color: #f0fdf9;
+}
+
+/* ---- utilitaires signature ---- */
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+/* Carte verre : la surface par défaut de TrustDrive */
+@utility glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 20px 50px -24px rgba(0, 0, 0, 0.7);
+}
+
+@utility glass-strong {
+  background: linear-gradient(180deg, rgba(18, 25, 43, 0.85), rgba(9, 13, 22, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 32px 80px -32px rgba(0, 0, 0, 0.85);
+}
+
+/* Titre avec dégradé métal */
+@utility text-metal {
+  background: linear-gradient(180deg, #ffffff 20%, #b6c2d6 70%, #8b99b4 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility text-mint-gradient {
+  background: linear-gradient(92deg, #6ee7b7, #34d399 45%, #38bdf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Grain photographique sur tout le site */
+.noise::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Fine bordure dégradée (cartes premium) */
+@utility ring-gradient {
+  position: relative;
+}
+.ring-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    rgba(110, 231, 183, 0.5),
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0.05) 65%,
+    rgba(56, 189, 248, 0.35)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Lueur d'accent sous les CTA */
+@utility glow-mint {
+  box-shadow:
+    0 0 0 1px rgba(52, 211, 153, 0.35),
+    0 10px 34px -8px rgba(52, 211, 153, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Ligne de scan (analyse) */
+.scan-line {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(110, 231, 183, 0.9), transparent);
+  filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.8));
+  animation: var(--animate-scanline);
+}
+
+/* Piste de fond : grille perspective très subtile */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 68% at 50% 0%, #000 30%, transparent 78%);
+}
+
+/* Barre de défilement discrète */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
