@@ -900,7 +900,7 @@ footer nav a:hover{color:var(--ink)}
         <div class="price">0&nbsp;€<span class="per"> / pour toujours</span></div>
         <p class="plan-desc">Pour un achat ponctuel.</p>
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>3 analyses par mois</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>3 analyses par semaine</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Indice de confiance &amp; verdict</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Cote calculée &amp; défauts connus</li>
         </ul>
@@ -909,8 +909,8 @@ footer nav a:hover{color:var(--ink)}
       <div class="plan featured reveal">
         <span class="plan-badge">Le plus choisi</span>
         <h3>Acheteur</h3>
-        <div class="price">9,90&nbsp;€<span class="per"> / mois</span></div>
-        <p class="plan-desc">Pour chercher sereinement pendant 1 à 3 mois.</p>
+        <div class="price">4,99&nbsp;€<span class="per"> / mois</span></div>
+        <p class="plan-desc">Analyses illimitées, résiliable en deux clics.</p>
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Analyses illimitées</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Rapport complet&nbsp;: fiabilité, budget, décote</li>
@@ -1046,22 +1046,28 @@ function detectFromUrl(url) {
   try { s = decodeURIComponent(url); } catch { s = url; }
   s = ' ' + s.toLowerCase().replace(/[-_+.,/?=&#]/g, ' ') + ' ';
   const found = { brand: null, model: null, year: null, km: null };
+  const bound = (a) => new RegExp('(^|[^0-9a-zà-ÿ])' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^0-9a-zà-ÿ])');
   for (const b of BRANDS) {
-    if (b.alias.some(a => s.includes(a))) { found.brand = b; break; }
+    if (b.alias.some(a => bound(a).test(s))) { found.brand = b; break; }
   }
+  const ym = s.match(/(^|\s)(19[5-9]\d|20[0-2]\d)(\s|$)/);
+  if (ym) found.year = parseInt(ym[2], 10);
   const pool = found.brand ? [found.brand] : BRANDS;
-  outer:
+  let best = null;
   for (const b of pool) {
+    const shared = {};
+    for (const m of b.models) for (const a of m.alias) shared[a] = (shared[a] || 0) + 1;
     for (const m of b.models) {
       for (const a of m.alias) {
-        if (new RegExp('(^|[^0-9a-zà-ÿ])' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^0-9a-zà-ÿ])').test(s)) {
-          found.brand = b; found.model = m; break outer;
-        }
+        if (!bound(a).test(s)) continue;
+        let sc = a.length * 10;
+        if (shared[a] === 1) sc += 15;
+        if (found.year && found.year >= m.y[0] && found.year <= m.y[1]) sc += 100;
+        if (!best || sc > best.sc) best = { b, m, sc };
       }
     }
   }
-  const ym = s.match(/(^|\s)(19[89]\d|20[0-2]\d)(\s|$)/);
-  if (ym) found.year = parseInt(ym[2], 10);
+  if (best) { found.brand = best.b; found.model = best.m; }
   const kmm = s.match(/(\d{2,3})\s?000\s?km/);
   if (kmm) found.km = parseInt(kmm[1], 10) * 1000;
   return found;
@@ -1189,7 +1195,7 @@ function critAir(fuel, year) {
 function retention(seg, age) {
   const curve = DEPRECIATION[seg];
   const base = curve[Math.min(age, 12)];
-  return age > 12 ? base * Math.pow(0.985, age - 12) : base;
+  return age > 12 ? base * Math.pow(0.97, age - 12) : base;
 }
 function computeValue(model, eng, year, km) {
   const seg = eng.segx || model.seg;
@@ -1280,7 +1286,7 @@ function analyse(sel) {
     'Avez-vous les deux clés, le carnet et le dernier contrôle technique ?');
 
   /* Budget */
-  const maint = Math.round(MAINT_BASE[seg] * (seg === 'supercar' || seg === 'sport' ? 1 : TIER_MAINT[brand.tier]) * (1 + Math.max(0, age - 4) * 0.05) / 10) * 10;
+  const maint = Math.round(MAINT_BASE[seg] * (seg === 'supercar' || seg === 'sport' ? 1 : TIER_MAINT[brand.tier]) * (model.mx || 1) * (1 + Math.max(0, age - 4) * 0.05) / 10) * 10;
   let insur = Math.round((28 + eng.p * 0.32) * TIER_INSUR[brand.tier]);
   if (fam.fuel === 'Électrique') insur = Math.round(insur * 0.9);
   if (seg === 'supercar') insur = Math.max(insur, 380);
