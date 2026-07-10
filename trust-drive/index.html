@@ -187,6 +187,25 @@ h2{font-size:clamp(28px,4vw,40px);margin-bottom:var(--space-2)}
 .fld select{appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%23858B99' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
 .identify-actions{margin-top:var(--space-3);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 
+/* Zone de collage (extraction automatique) */
+.paste-zone{margin-top:var(--space-3);border-top:1px dashed var(--line);padding-top:var(--space-3)}
+.paste-zone label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+.paste-zone label svg{color:var(--accent-text)}
+.paste-zone textarea{
+  width:100%;min-height:64px;max-height:180px;padding:12px 14px;resize:vertical;
+  background:var(--bg-base);border:1px solid var(--line-strong);border-radius:10px;
+  color:var(--ink);font-family:var(--font-ui);font-size:13px;line-height:1.5;
+  transition:border-color .2s var(--ease),box-shadow .2s var(--ease);
+}
+.paste-zone textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.paste-zone .hint{font-size:12px;color:var(--ink-3);margin-top:6px}
+.extract-status{display:none;align-items:center;gap:9px;margin-top:12px;font-size:13.5px;color:var(--ink-2)}
+.extract-status.visible{display:flex}
+.extract-status .spin{width:16px;height:16px;flex:none;border:2px solid var(--line-strong);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.extract-status.ok{color:var(--good)}
+.extract-status.ko{color:var(--warn)}
+
 /* Scan state */
 .scan{display:none;margin-top:var(--space-4);border-top:1px solid var(--line);padding-top:var(--space-3)}
 .scan.active{display:block}
@@ -547,6 +566,21 @@ footer nav a:hover{color:var(--ink)}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           Renseignez l'année, le kilométrage et le prix affiché pour lancer l'analyse.
         </p>
+        <div class="paste-zone">
+          <label for="pasteInput">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Extraction express : collez le texte de l'annonce
+          </label>
+          <textarea id="pasteInput" placeholder="Sur la page Le bon coin : Ctrl+A puis Ctrl+C, et collez tout ici — TrustDrive extrait modèle, année, kilométrage, prix, boîte et carburant automatiquement."></textarea>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px">
+            <button type="button" class="btn btn-ghost" id="extractBtn" style="min-height:42px;font-size:14px">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 11-13h-7l.5-7Z"/></svg>
+              Extraire les données
+            </button>
+            <span class="hint">Fonctionne à tous les coups — aucune donnée ne quitte votre navigateur.</span>
+          </div>
+        </div>
+        <p class="extract-status" id="extractStatus" role="status" aria-live="polite"></p>
         <div class="identify-actions">
           <button type="button" class="btn btn-primary" id="runBtn">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h7l-1 8 11-13h-7l.5-7Z"/></svg>
@@ -565,7 +599,7 @@ footer nav a:hover{color:var(--ink)}
 
       <p class="demo-note">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-        <span>Les liens Le bon coin ne contiennent qu'un identifiant&nbsp;: Trust Drive détecte ce qu'il peut depuis le lien, vous confirmez le reste. Cotes et budgets sont des <strong>estimations</strong> calculées par notre base embarquée — la lecture automatique complète de l'annonce arrive avec la version connectée.</span>
+        <span>TrustDrive tente d'abord de <strong>lire l'annonce automatiquement</strong>. Si Le bon coin bloque les robots (fréquent), l'extraction express prend le relais&nbsp;: collez le texte de l'annonce et tout est extrait localement — rien ne quitte votre navigateur. Cotes et budgets sont des <strong>estimations</strong> calculées par notre base embarquée.</span>
       </p>
     </form>
 
@@ -788,7 +822,7 @@ footer nav a:hover{color:var(--ink)}
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
           Collez le lien
         </h3>
-        <p>Trust Drive lit tout ce que le lien révèle — marque, modèle, année quand ils s'y trouvent — et vous demande de confirmer le reste en quatre champs. Jamais d'invention.</p>
+        <p>TrustDrive ouvre l'annonce et extrait tout ce qu'il peut&nbsp;: modèle, année, kilométrage, prix, boîte, carburant. Si Le bon coin bloque les robots, collez simplement le texte de la page — l'extraction express fait le reste.</p>
       </div>
       <div class="step-card reveal">
         <span class="step-num">02</span>
@@ -943,8 +977,8 @@ footer nav a:hover{color:var(--ink)}
     </div>
     <div class="faq reveal">
       <details>
-        <summary>Pourquoi dois-je confirmer le modèle après avoir collé le lien&nbsp;? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
-        <div class="faq-body">Les liens Le bon coin ne contiennent qu'un identifiant d'annonce — aucune caractéristique du véhicule. Plutôt que d'inventer, Trust Drive détecte ce que le lien révèle et vous fait confirmer le reste en quatre champs. La version connectée (avec back-end) lira l'annonce complète automatiquement.</div>
+        <summary>Comment TrustDrive lit-il l'annonce&nbsp;? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
+        <div class="faq-body">En trois étages. 1)&nbsp;TrustDrive tente d'ouvrir l'annonce et d'en extraire les données automatiquement (titre, prix, année, kilométrage, boîte, carburant). 2)&nbsp;Si Le bon coin bloque les robots — sa protection anti-bot est agressive — l'extraction express prend le relais&nbsp;: vous copiez le texte de la page (Ctrl+A, Ctrl+C) et TrustDrive extrait tout localement, sans que rien ne quitte votre navigateur. 3)&nbsp;En dernier recours, quatre champs suffisent. Jamais d'invention&nbsp;: ce qui n'est pas lu vous est demandé.</div>
       </details>
       <details>
         <summary>D'où viennent les défauts connus et les cotes&nbsp;? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></summary>
@@ -1040,18 +1074,30 @@ const BRANDS_SORTED = [...BRANDS].sort((a, b) => a.name.localeCompare(b.name, 'f
   $('coverageNote').textContent = `${BRANDS.length} marques · ${models} modèles · ${famMoteur + famBoite} familles moteur/boîte`;
 })();
 
-/* ---------- Détection depuis l'URL ---------- */
-function detectFromUrl(url) {
-  let s;
-  try { s = decodeURIComponent(url); } catch { s = url; }
-  s = ' ' + s.toLowerCase().replace(/[-_+.,/?=&#]/g, ' ') + ' ';
+/* ---------- Détection du véhicule (URL ou texte d'annonce) ---------- */
+function normText(raw) {
+  let s; try { s = decodeURIComponent(raw); } catch { s = raw; }
+  return ' ' + s.toLowerCase().replace(/ /g, ' ').replace(/[-_+.,/?=&#|;:!()'"«»]/g, ' ').replace(/\s+/g, ' ') + ' ';
+}
+const bound = (a) => new RegExp('(^|[^0-9a-zà-ÿ])' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^0-9a-zà-ÿ])');
+function detectVehicle(raw, title, yearHint) {
+  const s = normText(raw);
+  const tz = title ? normText(title) : s.slice(0, 320);
   const found = { brand: null, model: null, year: null, km: null };
-  const bound = (a) => new RegExp('(^|[^0-9a-zà-ÿ])' + a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^0-9a-zà-ÿ])');
+  let bBest = null;
   for (const b of BRANDS) {
-    if (b.alias.some(a => bound(a).test(s))) { found.brand = b; break; }
+    for (const a of b.alias) {
+      if (!bound(a).test(s)) continue;
+      const sc = a.length * 10 + (bound(a).test(tz) ? 30 : 0);
+      if (!bBest || sc > bBest.sc) bBest = { b, sc };
+    }
   }
-  const ym = s.match(/(^|\s)(19[5-9]\d|20[0-2]\d)(\s|$)/);
-  if (ym) found.year = parseInt(ym[2], 10);
+  if (bBest) found.brand = bBest.b;
+  if (yearHint) found.year = yearHint;
+  else {
+    const ym = s.match(/(^|\s)(19[5-9]\d|20[0-2]\d)(\s|$)/);
+    if (ym) found.year = parseInt(ym[2], 10);
+  }
   const pool = found.brand ? [found.brand] : BRANDS;
   let best = null;
   for (const b of pool) {
@@ -1062,6 +1108,7 @@ function detectFromUrl(url) {
         if (!bound(a).test(s)) continue;
         let sc = a.length * 10;
         if (shared[a] === 1) sc += 15;
+        if (bound(a).test(tz)) sc += 30;
         if (found.year && found.year >= m.y[0] && found.year <= m.y[1]) sc += 100;
         if (!best || sc > best.sc) best = { b, m, sc };
       }
@@ -1071,6 +1118,132 @@ function detectFromUrl(url) {
   const kmm = s.match(/(\d{2,3})\s?000\s?km/);
   if (kmm) found.km = parseInt(kmm[1], 10) * 1000;
   return found;
+}
+function detectFromUrl(url) { return detectVehicle(url); }
+
+/* ---------- Lecture automatique de l'annonce ----------
+   1) tentative via relais CORS publics (fonctionne quand la
+      protection anti-robot de leboncoin laisse passer)
+   2) analyse du JSON __NEXT_DATA__ embarqué dans la page
+   3) repli infaillible : l'utilisateur colle le texte de
+      l'annonce, tout est extrait localement.               */
+const PROXIES = [
+  u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u),
+  u => 'https://corsproxy.io/?url=' + encodeURIComponent(u)
+];
+async function fetchListing(url) {
+  for (const wrap of PROXIES) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 9000);
+      const res = await fetch(wrap(url), { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) continue;
+      const html = await res.text();
+      if (html.length < 20000 && /datadome|captcha/i.test(html)) continue;
+      const data = parseListingHTML(html);
+      if (data && (data.price || data.km || data.year)) return data;
+    } catch { /* relais suivant */ }
+  }
+  return null;
+}
+function parseListingHTML(html) {
+  const nd = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (nd) {
+    try {
+      const j = JSON.parse(nd[1]);
+      const ad = (j.props && j.props.pageProps && (j.props.pageProps.ad || j.props.pageProps.adview)) || null;
+      if (ad) {
+        const attrs = {};
+        (ad.attributes || []).forEach(a => { attrs[a.key] = a.value_label || a.value; });
+        const rawPrice = Array.isArray(ad.price) ? ad.price[0] : (ad.price && ad.price.value != null ? ad.price.value : ad.price);
+        return {
+          title: ad.subject || '',
+          price: Number(rawPrice) || null,
+          year: parseInt(attrs.regdate, 10) || null,
+          km: parseInt(String(attrs.mileage || '').replace(/\D/g, ''), 10) || null,
+          fuel: attrs.fuel || null,
+          gearbox: attrs.gearbox || null,
+          power: parseInt(attrs.horse_power_din || attrs.horsepower, 10) || null,
+          raw: (ad.subject || '') + ' ' + (ad.body || '')
+        };
+      }
+    } catch { /* structure inattendue : repli texte */ }
+  }
+  const title = (html.match(/<title>([^<]{5,160})/) || [])[1] || '';
+  const text = html.replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+  return parseListingText(title + ' ' + text, title);
+}
+function parseListingText(text, title) {
+  const t = ' ' + String(text).replace(/ /g, ' ').replace(/\s+/g, ' ') + ' ';
+  const num = (x) => x != null ? parseInt(String(x).replace(/[^\d]/g, ''), 10) : null;
+  let year = null, m1;
+  m1 = t.match(/ann[ée]e[\s-]*mod[èe]le\s*:?\s*((?:19|20)\d{2})/i) || t.match(/mise en circulation\s*:?\s*(?:\d{1,2}\/)?((?:19|20)\d{2})/i);
+  if (m1) year = +m1[1];
+  else { m1 = t.match(/(^|[^\d])((?:19[5-9]|20[0-2])\d)([^\d]|$)/); if (m1) year = +m1[2]; }
+  let km = null;
+  m1 = t.match(/kilom[ée]trage\s*:?\s*([\d\s.,]{2,12})\s*km/i) || t.match(/(\d{1,3}(?:[\s.]\d{3})+)\s*km(?![\/\w])/i) || t.match(/(\d{4,6})\s*km(?![\/\w])/i);
+  if (m1) km = num(m1[1]);
+  let price = null;
+  for (const mm of t.matchAll(/(\d{1,3}(?:[\s.]\d{3})+|\d{3,7})\s*(?:€|euros?)/gi)) {
+    const v = num(mm[1]);
+    if (v >= 300 && v <= 3000000) { price = v; break; }
+  }
+  let gearbox = null;
+  m1 = t.match(/bo[îi]te(?:\s+de\s+vitesses?)?\s*:?\s*(automatique|manuelle)/i) || t.match(/\b(automatique|manuelle)\b/i);
+  if (m1) gearbox = m1[1];
+  let fuel = null;
+  m1 = t.match(/carburant\s*:?\s*(essence|diesel|hybride|[ée]lectrique|gpl)/i) || t.match(/\b(essence|diesel|hybride|[ée]lectrique)\b/i);
+  if (m1) fuel = m1[1];
+  let power = null;
+  m1 = t.match(/puissance\s*(?:din|r[ée]elle)?\s*:?\s*(\d{2,4})\s*ch/i) || t.match(/\b(\d{2,3})\s*ch\b/);
+  if (m1) power = +m1[1];
+  return { title: title || '', price, year, km, fuel, gearbox, power, raw: t.slice(0, 8000) };
+}
+const ICO_SEARCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>';
+function applyExtracted(d, sourceMsg) {
+  const det = detectVehicle((d.title || '') + ' ' + (d.raw || ''), d.title, d.year || null);
+  if (d.year) det.year = d.year;
+  if (d.km != null && d.km >= 0) det.km = d.km;
+  fillBrands(det.brand || undefined);
+  fillModels(det.brand || currentBrand(), det.model || undefined);
+  fillEngines(currentModel());
+  let cand = currentModel().eng.map((e, i) => ({ e, i }));
+  if (d.fuel) {
+    const F = /diesel/i.test(d.fuel) ? 'Diesel' : /hybride/i.test(d.fuel) ? 'Hybride' : /lectrique/i.test(d.fuel) ? 'Électrique' : 'Essence';
+    const filtered = cand.filter(c => ENGINES[c.e.ref].fuel === F);
+    if (filtered.length) cand = filtered;
+  }
+  if (d.power) cand = [...cand].sort((a, b) => Math.abs(a.e.p - d.power) - Math.abs(b.e.p - d.power));
+  if (d.fuel || d.power) selEngine.value = String(cand[0].i);
+  fillBoxes(currentEngine());
+  if (d.gearbox && selBox.querySelector('option[value="' + (/auto/i.test(d.gearbox) ? 'a' : 'm') + '"]')) {
+    selBox.value = /auto/i.test(d.gearbox) ? 'a' : 'm';
+  }
+  fillYears(currentModel(), det.year && det.year >= currentModel().y[0] && det.year <= currentModel().y[1] ? det.year : undefined);
+  if (det.km != null) inpKm.value = det.km;
+  if (d.price) inpPrice.value = d.price;
+  $('identifyPanel').hidden = false;
+  const parts = [];
+  if (det.brand && det.model) parts.push(det.brand.name + ' ' + det.model.name);
+  if (det.year) parts.push(String(det.year));
+  if (det.km != null) parts.push(det.km.toLocaleString('fr-FR') + ' km');
+  if (d.price) parts.push(euro(d.price));
+  $('identifyMsg').innerHTML = ICO_SEARCH + '<span>' + sourceMsg + (parts.length ? '&nbsp;: <strong>' + escapeHtml(parts.join(' · ')) + '</strong>' : '') + '</span>';
+  const complete = !!(det.brand && det.model && det.year && det.km != null && d.price);
+  if (complete) {
+    runAnalysis({ brand: det.brand, model: det.model, eng: currentEngine(), box: selBox.value, year: det.year, km: det.km, price: d.price });
+  } else {
+    $('identifyPanel').scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'nearest' });
+    (!det.model ? selModel : (!det.year ? selYear : (det.km == null ? inpKm : inpPrice))).focus({ preventScroll: true });
+  }
+  return complete;
+}
+function setStatus(kind, html) {
+  const el = $('extractStatus');
+  if (kind === 'hide') { el.className = 'extract-status'; el.innerHTML = ''; return; }
+  el.className = 'extract-status visible' + (kind ? ' ' + kind : '');
+  el.innerHTML = (kind === '' ? '<span class="spin" aria-hidden="true"></span>' : '') + '<span>' + html + '</span>';
 }
 
 /* ---------- Panneau d'identification ---------- */
@@ -1134,7 +1307,7 @@ function openIdentify(found) {
 const form = $('analyzerForm'), input = $('urlInput'), urlError = $('urlError');
 let analyzing = false;
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const v = input.value.trim();
   if (!v || !/leboncoin|https?:\/\//i.test(v)) {
@@ -1144,8 +1317,32 @@ form.addEventListener('submit', (e) => {
   }
   urlError.classList.remove('visible');
   openIdentify(detectFromUrl(v));
+  if (/^https?:\/\//i.test(v) && !analyzing) {
+    setStatus('', "Lecture automatique de l'annonce en cours…");
+    const data = await fetchListing(v);
+    if (analyzing) { setStatus('hide', ''); return; }
+    if (data) {
+      const complete = applyExtracted(data, 'Annonce lue automatiquement');
+      setStatus('ok', complete ? 'Données extraites — analyse lancée.' : 'Extraction partielle : complétez les champs manquants ci-dessus.');
+    } else {
+      setStatus('ko', "Le bon coin bloque la lecture robotisée. Pas de souci : copiez le texte de l'annonce (Ctrl+A puis Ctrl+C sur la page) et collez-le ci-dessous — l'extraction express lit tout, instantanément.");
+      $('pasteInput').focus({ preventScroll: true });
+    }
+  }
 });
 input.addEventListener('input', () => urlError.classList.remove('visible'));
+
+$('extractBtn').addEventListener('click', () => {
+  const txt = $('pasteInput').value.trim();
+  if (txt.length < 30) {
+    setStatus('ko', "Collez d'abord le texte complet de l'annonce (Ctrl+A puis Ctrl+C sur la page Le bon coin).");
+    $('pasteInput').focus();
+    return;
+  }
+  const data = parseListingText(txt, txt.split('\n')[0].slice(0, 160));
+  const complete = applyExtracted(data, "Texte de l'annonce analysé");
+  setStatus(complete ? 'ok' : 'ko', complete ? 'Tout est extrait — analyse lancée.' : 'Extraction partielle : vérifiez les champs restants ci-dessus.');
+});
 
 $('runBtn').addEventListener('click', () => {
   const year = parseInt(selYear.value, 10), km = parseInt(inpKm.value, 10), price = parseInt(inpPrice.value, 10);

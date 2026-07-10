@@ -1017,7 +1017,7 @@ M("F-Type","f-type,ftype","p",2013,2024,75000,"jlr_v8s:450:a:zf8|jlr_ing_p:300:a
 M("XK/XKR","xk,xkr","p",1996,2014,60000,"jlr_v8s:416:a:bva_old",{floor:.4}),
 M("I-Pace","i-pace,ipace","e",2018,2024,80000,"jlr_ipace:400:a")
 ]);
-Br("Land Rover","land rover,landrover,range rover,range",2,[
+Br("Land Rover","land rover,landrover,range rover",2,[
 M("Defender (classique)","defender","s",1990,2016,45000,"psa_hdi20_old:122|ford_tdci18:122",{floor:.85}),
 M("Defender (2020+)","defender","s",2020,2026,75000,"jlr_ing_d:200:a:zf8|jlr_ing_p:300:a:zf8",{floor:.55}),
 M("Discovery 3/4","discovery","s",2004,2016,52000,"jlr_tdv6:245:a:bva_old"),
@@ -1868,4 +1868,65 @@ M("Massif","massif","s",2008,2011,32000,"iveco_d:176",{floor:.6})
 ]);
 Br("Piaggio","piaggio",1,[
 M("Porter","porter","c",1993,2021,15000,"dai_a:65")
+]);
+
+/* ============================================================
+   COMPLÉMENT v4 — nouveautés 2024–2026 et derniers oublis
+   ============================================================ */
+Object.assign(ENGINES, {
+  ev_early_vag:{label:"e-Golf / e-up! électrique",fuel:"Électrique",conso:"13,8 kWh",rel:78,issues:[
+    {t:"Autonomie d'origine modeste (190–260 km) : vérifiez le SOH batterie",sev:"warn",chk:"Relever l'autonomie affichée à 100 %"}]},
+  xiaomi_ev:{label:"SU7 électrique (import)",fuel:"Électrique",conso:"15,8 kWh",rel:70,issues:[
+    {t:"Import hors réseau officiel : garantie, pièces et mises à jour incertaines en Europe",sev:"warn",ask:"Qui assure le SAV et les mises à jour ?"}]},
+  mas_nettuno:{label:"3.0 V6 Nettuno",fuel:"Essence",conso:10.5,rel:72,issues:[
+    {t:"Moteur récent : exigez un historique réseau complet",sev:"warn",ask:"Toutes les campagnes de rappel sont-elles soldées ?"}]}
+});
+(function(){
+  const find = (n) => BRANDS.find(b => b.name === n);
+  find("Renault").models.push(
+    M("Twingo E-Tech","twingo e-tech,twingo electrique","e",2021,2026,24000,"ev_zoe:82:a"),
+    M("Espace VI","espace","s",2023,2026,44000,"ren_etech:200:a:ecvt")
+  );
+  find("Volkswagen").models.push(
+    M("e-Golf","e-golf,egolf","e",2014,2020,36000,"ev_early_vag:136:a"),
+    M("e-up!","e-up,eup","e",2014,2023,24000,"ev_early_vag:83:a"),
+    M("Golf Sportsvan","sportsvan","k",2014,2020,25000,"vag_ea211:125:ma:dq200|vag_ea288:115"),
+    M("Multivan T7","multivan t7","s",2021,2026,55000,"vag_ea211:150:a:dsg_wet|vag_ea888:204:a:dsg_wet")
+  );
+  find("Peugeot").models.push(M("5008 III","5008","s",2024,2026,43000,"psa_hy48:136:a|ev_psa:210:a"));
+  find("Citroën").models.push(M("C4 X","c4 x,c4x","b",2022,2026,30000,"eb2_puretech:130:a:dsg_wet|ev_psa:136:a"));
+  find("Opel").models.push(
+    M("Agila","agila","c",2000,2014,11500,"suzuki_atmo:94"),
+    M("Zafira Life","zafira life","s",2019,2026,42000,"psa_bluehdi20:177:a:dsg_wet")
+  );
+  find("Dacia").models.push(M("Dokker","dokker","s",2012,2021,14500,"ren_dci15:90|ren_tce_12:115"));
+  find("Toyota").models.push(
+    M("Corolla Cross","corolla cross","s",2022,2026,36000,"toy_hsd:197:a:ecvt"),
+    M("Proace City","proace city","s",2020,2026,28000,"psa_bluehdi15:100|eb2_puretech:110")
+  );
+  find("Honda").models.push(M("ZR-V","zr-v,zrv","s",2023,2026,42000,"honda_hev:184:a:ecvt"));
+  find("Mazda").models.push(M("CX-80","cx-80,cx80","s",2024,2026,55000,"mazda_skyd:254:a:zf8"));
+  find("Nissan").models.push(M("Townstar","townstar","s",2022,2026,28000,"ren_tce13:130|ev_zoe:122:a"));
+  find("Hyundai").models.push(M("Ioniq 9","ioniq 9,ioniq9","e",2025,2026,72000,"hk_egmp:428:a"));
+  find("Mercedes-Benz").models.push(
+    M("EQV","eqv","e",2020,2026,75000,"mb_eq:204:a"),
+    M("CLE","cle","b",2024,2026,60000,"mb_m270:204:a:bva_old"),
+    M("Classe T","classe t","s",2022,2026,30000,"ren_dci15:116|ren_tce13:131")
+  );
+  find("Audi").models.push(M("Q6 e-tron","q6,q6 e-tron","e",2024,2026,65000,"vag_etron:387:a"));
+  find("Smart").models.push(M("#5","smart #5,#5","e",2025,2026,48000,"zeekr_ev:340:a"));
+  find("Ford").models.push(M("Bronco","bronco","s",2023,2026,60000,"ford_st:335:a:zf8",{floor:.6}));
+  find("Ferrari").models.push(M("12Cilindri","12cilindri,12 cilindri","x",2024,2026,400000,"fer_v12:830:a:dsg_wet",{floor:.85}));
+  find("Maserati").models.push(M("GranTurismo II","granturismo","x",2023,2026,190000,"mas_nettuno:490:a:zf8",{floor:.6}));
+  find("McLaren").models.push(M("750S","750s","x",2023,2026,280000,"mcl_v8:750:a:dsg_wet",{hold:.85}));
+  find("Aston Martin").models.push(M("DB12","db12","x",2023,2026,250000,"aston_v8:680:a:zf8",{floor:.65}));
+  find("Porsche").models.push(M("Macan électrique","macan electrique,macan ev","e",2024,2026,85000,"por_ev:408:a"));
+  find("Alpine").models.push(M("A390","a390","e",2025,2026,65000,"ren_ev5:400:a"));
+  find("Kia").models.push(M("Ceed SW","ceed sw","k",2018,2026,26000,"hk_tgdi:120:ma:dsg_wet"));
+})();
+Br("Xiaomi","xiaomi",2,[
+M("SU7 (import)","su7,xiaomi su7","e",2024,2026,80000,"xiaomi_ev:673:a",{floor:.55})
+]);
+Br("Ineos","ineos",2,[
+M("Grenadier","grenadier","s",2022,2026,75000,"bmw_6cyl:286:a:zf8|bmw_n57:249:a:zf8",{floor:.65})
 ]);
