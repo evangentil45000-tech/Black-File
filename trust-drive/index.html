@@ -557,6 +557,7 @@ footer nav a:hover{color:var(--ink)}
           <div class="fld"><label for="selBrand">Marque</label><select id="selBrand"></select></div>
           <div class="fld"><label for="selModel">Modèle</label><select id="selModel"></select></div>
           <div class="fld"><label for="selEngine">Motorisation</label><select id="selEngine"></select></div>
+          <div class="fld"><label for="selPower">Puissance</label><select id="selPower"></select></div>
           <div class="fld"><label for="selBox">Boîte de vitesses</label><select id="selBox"></select></div>
           <div class="fld"><label for="selYear">Année</label><select id="selYear"></select></div>
           <div class="fld"><label for="inpKm">Kilométrage</label><input id="inpKm" type="number" inputmode="numeric" min="0" step="500" placeholder="ex. 78 500"></div>
@@ -801,7 +802,7 @@ footer nav a:hover{color:var(--ink)}
     <div class="stats-grid">
       <div><div class="stat-num" id="statBrands" data-count="0">0</div><div class="stat-label">marques couvertes</div></div>
       <div><div class="stat-num" id="statModels" data-count="0">0</div><div class="stat-label">modèles référencés</div></div>
-      <div><div class="stat-num" id="statEngines" data-count="0">0</div><div class="stat-label">familles moteur &amp; boîte documentées</div></div>
+      <div><div class="stat-num" id="statEngines" data-count="0">0</div><div class="stat-label">motorisations référencées (déclinaisons réelles)</div></div>
       <div><div class="stat-num" id="statChecks" data-count="0">0</div><div class="stat-label">défauts connus &amp; points de contrôle</div></div>
     </div>
   </div>
@@ -1063,15 +1064,15 @@ const BRANDS_SORTED = [...BRANDS].sort((a, b) => a.name.localeCompare(b.name, 'f
 /* ---------- Statistiques réelles de la base ---------- */
 (function initStats() {
   const models = BRANDS.reduce((n, b) => n + b.models.length, 0);
-  const famMoteur = Object.keys(ENGINES).length, famBoite = Object.keys(GEARBOXES).length;
+  const motorisations = countMotorisations();
   let checks = 0;
   for (const e of Object.values(ENGINES)) for (const i of e.issues) checks += 1 + (i.chk ? 1 : 0) + (i.ask ? 1 : 0);
   for (const g of Object.values(GEARBOXES)) for (const i of g.issues) checks += 1 + (i.chk ? 1 : 0) + (i.ask ? 1 : 0);
   $('statBrands').dataset.count = BRANDS.length;
   $('statModels').dataset.count = models;
-  $('statEngines').dataset.count = famMoteur + famBoite;
+  $('statEngines').dataset.count = motorisations;
   $('statChecks').dataset.count = checks;
-  $('coverageNote').textContent = `${BRANDS.length} marques · ${models} modèles · ${famMoteur + famBoite} familles moteur/boîte`;
+  $('coverageNote').textContent = `${BRANDS.length} marques · ${models.toLocaleString('fr-FR')} modèles · ${motorisations.toLocaleString('fr-FR')} motorisations`;
 })();
 
 /* ---------- Détection du véhicule (URL ou texte d'annonce) ---------- */
@@ -1216,7 +1217,8 @@ function applyExtracted(d, sourceMsg) {
   }
   if (d.power) cand = [...cand].sort((a, b) => Math.abs(a.e.p - d.power) - Math.abs(b.e.p - d.power));
   if (d.fuel || d.power) selEngine.value = String(cand[0].i);
-  fillBoxes(currentEngine());
+  fillPowers(d.power || undefined);
+  fillBoxes(baseEngine());
   if (d.gearbox && selBox.querySelector('option[value="' + (/auto/i.test(d.gearbox) ? 'a' : 'm') + '"]')) {
     selBox.value = /auto/i.test(d.gearbox) ? 'a' : 'm';
   }
@@ -1248,7 +1250,8 @@ function setStatus(kind, html) {
 
 /* ---------- Panneau d'identification ---------- */
 const selBrand = $('selBrand'), selModel = $('selModel'), selEngine = $('selEngine'),
-      selBox = $('selBox'), selYear = $('selYear'), inpKm = $('inpKm'), inpPrice = $('inpPrice');
+      selPower = $('selPower'), selBox = $('selBox'), selYear = $('selYear'),
+      inpKm = $('inpKm'), inpPrice = $('inpPrice');
 
 function fillBrands(selected) {
   selBrand.innerHTML = BRANDS_SORTED.map(b =>
@@ -1264,7 +1267,19 @@ function fillEngines(model) {
   selEngine.innerHTML = model.eng.map((e, i) =>
     `<option value="${i}">${escapeHtml(ENGINES[e.ref].label)} — ${e.p} ch</option>`).join('');
 }
-function currentEngine() { return currentModel().eng[parseInt(selEngine.value, 10) || 0]; }
+function baseEngine() { return currentModel().eng[parseInt(selEngine.value, 10) || 0]; }
+function currentEngine() {
+  const e = baseEngine();
+  const p = parseInt(selPower.value, 10);
+  return p > 0 ? Object.assign({}, e, { p }) : e;
+}
+function fillPowers(preferred) {
+  const e = baseEngine();
+  const steps = powerStepsFor(currentModel(), e);
+  const target = preferred || e.p;
+  const def = steps.reduce((acc, p) => Math.abs(p - target) < Math.abs(acc - target) ? p : acc, steps[0]);
+  selPower.innerHTML = steps.map(p => `<option value="${p}"${p === def ? ' selected' : ''}>${p} ch</option>`).join('');
+}
 function fillBoxes(eng) {
   const opts = [];
   if (eng.box.includes('m')) opts.push('<option value="m">Manuelle</option>');
@@ -1277,9 +1292,9 @@ function fillYears(model, selected) {
   for (let y = to; y >= from; y--) out.push(`<option value="${y}"${selected === y ? ' selected' : ''}>${y}</option>`);
   selYear.innerHTML = out.join('');
 }
-selBrand.addEventListener('change', () => { fillModels(currentBrand()); fillEngines(currentModel()); fillBoxes(currentEngine()); fillYears(currentModel()); });
-selModel.addEventListener('change', () => { fillEngines(currentModel()); fillBoxes(currentEngine()); fillYears(currentModel()); });
-selEngine.addEventListener('change', () => fillBoxes(currentEngine()));
+selBrand.addEventListener('change', () => { fillModels(currentBrand()); fillEngines(currentModel()); fillPowers(); fillBoxes(baseEngine()); fillYears(currentModel()); });
+selModel.addEventListener('change', () => { fillEngines(currentModel()); fillPowers(); fillBoxes(baseEngine()); fillYears(currentModel()); });
+selEngine.addEventListener('change', () => { fillPowers(); fillBoxes(baseEngine()); });
 
 function openIdentify(found) {
   const msg = $('identifyMsg');
@@ -1294,7 +1309,8 @@ function openIdentify(found) {
   fillBrands(found.brand || undefined);
   fillModels(found.brand || currentBrand(), found.model || undefined);
   fillEngines(currentModel());
-  fillBoxes(currentEngine());
+  fillPowers();
+  fillBoxes(baseEngine());
   fillYears(currentModel(), found.year && found.year >= currentModel().y[0] && found.year <= currentModel().y[1] ? found.year : undefined);
   if (found.km) inpKm.value = found.km;
   $('identifyPanel').hidden = false;
@@ -1371,7 +1387,7 @@ document.querySelectorAll('.chip').forEach(chip => {
     input.value = 'https://www.leboncoin.fr/ad/voitures/' + (2830000000 + Math.abs(hash(p.b + p.m)) % 9999999);
     urlError.classList.remove('visible');
     fillBrands(brand); fillModels(brand, model); fillEngines(model);
-    selEngine.value = String(p.e); fillBoxes(model.eng[p.e]); selBox.value = p.box;
+    selEngine.value = String(p.e); fillPowers(); fillBoxes(model.eng[p.e]); selBox.value = p.box;
     fillYears(model, p.year); inpKm.value = p.km; inpPrice.value = p.price;
     $('identifyMsg').innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span>Exemple chargé&nbsp;: <strong>${escapeHtml(p.b)} ${escapeHtml(p.m)}</strong> ${p.year}, ${p.km.toLocaleString('fr-FR')} km, ${euro(p.price)}.</span>`;
     $('identifyPanel').hidden = false;
